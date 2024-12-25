@@ -19,6 +19,7 @@ class Transformer_Layer(nn.Module):
         dynamic,
         factorized,
         layer_number,
+        batch_norm,
     ):
         super(Transformer_Layer, self).__init__()
         self.device = device
@@ -28,6 +29,7 @@ class Transformer_Layer(nn.Module):
         self.patch_nums = patch_nums
         self.patch_size = patch_size
         self.layer_number = layer_number
+        self.batch_norm = batch_norm
 
         ##intra_patch_attention
         self.intra_embeddings = nn.Parameter(
@@ -170,9 +172,13 @@ class Transformer_Layer(nn.Module):
         )  # [b, temporal, nvar, dim]
 
         out = new_x + intra_out_concat + inter_out
+        if self.batch_norm:
+            out = self.norm_attn(out.reshape(b * nvar, self.patch_size * self.patch_nums, self.d_model))
         ##FFN
         out = self.dropout(out)
         out = self.ff(out) + out
+        if self.batch_norm:
+            out = self.norm_ffn(out).reshape(b, self.patch_size * self.patch_nums, nvar, self.d_model)
         return out, attention
 
 
@@ -292,7 +298,7 @@ class Inter_Patch_Attention(nn.Module):
         # Linear (+ split in multiple heads)
         q_s = (
             self.W_Q(Q).view(bs, Q.shape[1], self.n_heads, self.d_k).transpose(1, 2)
-        )  # q_s    : [bs x n_heads x q_len x d_k]  此处的q_len为patch_num
+        )  # q_s    : [bs x n_heads x q_len x d_k]  Here, q_len refers to patch_num
         k_s = (
             self.W_K(K).view(bs, K.shape[1], self.n_heads, self.d_k).permute(0, 2, 3, 1)
         )  # k_s    : [bs x n_heads x d_k x q_len] - transpose(1,2) + transpose(2,3)

@@ -52,7 +52,7 @@ def _calculate_single_metric_result(
     metric_df["model_and_params"] = (
         metric_df["model_name"] + ";" + metric_df["model_params"]
     )
-    # todo:inf,-inf应该变成null
+    # TODO: inf and -inf should be changed to null
     metric_df = metric_df[[metric_name, "model_and_params", "file_name"]].pivot_table(
         values=metric_name,
         index="file_name",
@@ -107,7 +107,8 @@ def _get_report_metrics(
             list(report_metrics[not_matching]),
         )
     actual_report_metrics = record_metrics[matching_matrix.any(axis=0)]
-    return actual_report_metrics
+    actual_report_metrics = [metric for metric in report_metrics if metric in actual_report_metrics]
+    return np.array(actual_report_metrics)
 
 
 def get_leaderboard(
