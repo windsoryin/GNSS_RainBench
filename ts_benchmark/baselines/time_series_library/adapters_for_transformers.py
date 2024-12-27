@@ -51,7 +51,7 @@ DEFAULT_TRANSFORMER_BASED_HYPER_PARAMS = {
     "loss": "MSE",
     "itr": 1,
     "distil": True,
-    "patience": 3,
+    "patience": 10,
     "p_hidden_dims": [128, 128],
     "p_hidden_layers": 2,
     "mem_dim": 32,
@@ -101,7 +101,7 @@ class TransformerAdapter(ModelBase):
         return self._model_name
 
     def multi_forecasting_hyper_param_tune(self, train_data: pd.DataFrame):
-        freq = pd.infer_freq(train_data.index)
+        freq = pd.infer_freq(train_data[1:100].index)
         if freq == None:
             raise ValueError("Irregular time intervals")
         elif freq[0].lower() not in ["m", "w", "b", "d", "h", "t", "s"]:
